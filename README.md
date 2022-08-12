@@ -1,2 +1,2 @@
 # cdchall
-Code Challenge
+Don't try understand it.
