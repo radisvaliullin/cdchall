@@ -71,7 +71,7 @@ func main() {
 	fmt.Printf("grid has %v independent lands\n", findLands(grid5))
 }
 
-// O(N) (time and space) (recursive approach)
+// O(N), where N=m*n (time and space) (recursive approach)
 func findLands(grid [][]int) int {
 
 	landNum := 0
