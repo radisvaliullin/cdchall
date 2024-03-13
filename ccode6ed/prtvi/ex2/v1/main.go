@@ -9,6 +9,7 @@ func main() {
 	printPair(arr)
 }
 
+// O(N^2)
 func printPair(arr []int) {
 	for i := 0; i < len(arr); i++ {
 		for j := 0; j < len(arr); j++ {

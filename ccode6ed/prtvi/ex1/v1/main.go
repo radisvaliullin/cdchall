@@ -10,6 +10,7 @@ func main() {
 	fmt.Printf("sum and prod: %v, %v\n", sum, prod)
 }
 
+// O(N)
 func foo(arr []int) (sum, prod int) {
 	sum = 0
 	prod = 1
