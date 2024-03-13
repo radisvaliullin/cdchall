@@ -9,7 +9,7 @@ func main() {
 	fmt.Printf("fib of %v is %v\n", n, fib(n))
 }
 
-// O(2^N)
+// O(2^N) (actually 1.6^2, because bottom of call stack sometime has one call).
 func fib(n int) int {
 	if n <= 0 {
 		return 0
