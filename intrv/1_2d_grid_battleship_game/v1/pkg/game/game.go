@@ -1,8 +1,10 @@
 package game
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 )
@@ -18,6 +20,8 @@ const (
 	SHIP_HIT_BASE    = 10
 	SHIP_TYPE_BASE   = 100
 	SHIP_NUMBER_BASE = 1000
+
+	defaultInBuffSize = 1024
 )
 
 type Config struct {
@@ -52,31 +56,47 @@ func New(config Config) *Game {
 
 func (g *Game) Run() error {
 
-	in, err := os.ReadFile(g.config.InPath)
+	// inFile can be any io.Reader for example os.Stdin
+	inFile, err := os.Open(g.config.InPath)
 	if err != nil {
-		log.Printf("game: read input file error: %v", err)
+		log.Printf("game: open input file error: %v", err)
 		return err
 	}
+	defer inFile.Close()
 
-	cmds, err := inputParser(in)
-	if err != nil {
-		log.Printf("game: parse input file error: %v", err)
-	}
-
-	if err := g.Play(cmds); err != nil {
+	if err := g.Play(inFile); err != nil {
 		log.Printf("game: play error: %v", err)
 	}
 
 	return nil
 }
 
-func (g *Game) Play(moves []command) error {
+func (g *Game) Play(inSrc io.Reader) error {
+
+	buffInSrc := bufio.NewReaderSize(inSrc, defaultInBuffSize)
 
 	isPlaceRange := false
 	isFireRange := false
 
-	// execute commands
-	for _, cmd := range moves {
+	// read input source
+	var ioErr error
+	for {
+		if ioErr != nil {
+			log.Printf("game: play: read next command error: %v", ioErr)
+			return ioErr
+		}
+		var cmd command
+		var cmdErr error
+		cmd, cmdErr, ioErr = readNextCommandFromInSource(buffInSrc)
+		// if io error we need return
+		// but if io.EOF we need first handle command and after return, see ioErr check in beginning of for loop
+		if ioErr != nil && !errors.Is(ioErr, io.EOF) {
+			log.Printf("game: play: read next command error: %v", ioErr)
+			return ioErr
+		} else if cmdErr != nil {
+			log.Printf("game: play: read next command error: %v", cmdErr)
+			continue
+		}
 
 		// validate command execution order
 		if !isPlaceRange && !isFireRange && cmd.cmdType == CMD_TYPE_FIRE {
@@ -109,8 +129,6 @@ func (g *Game) Play(moves []command) error {
 			printFireStatus(shipStatus, shipType)
 		}
 	}
-
-	return nil
 }
 
 func (g *Game) placeShip(shipType, direct, r, c int) error {

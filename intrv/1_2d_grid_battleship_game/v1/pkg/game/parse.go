@@ -1,7 +1,7 @@
 package game
 
 import (
-	"bytes"
+	"bufio"
 	"errors"
 	"io"
 	"log"
@@ -9,45 +9,42 @@ import (
 	"strings"
 )
 
-// Parse input and returns list of commands
-func inputParser(in []byte) ([]command, error) {
-	out := make([]command, 0, 128)
+// Parse input line by line and return parsed command
+// For each call return one command
+// last error for io error for catch EOF
+func readNextCommandFromInSource(inSrc *bufio.Reader) (command, error, error) {
 
-	inBuf := bytes.NewBuffer(in)
-	isEOF := false
+	var line string
+	var ioErr error
 	// read command line by line
+	// if empty line skip
+	// if command break and return command
 	for {
-		line, err := inBuf.ReadString('\n')
-		if err != nil && !errors.Is(err, io.EOF) {
-			log.Printf("input parser: read line error: %v", err)
-			return nil, err
-		} else if err != nil && errors.Is(err, io.EOF) {
-			isEOF = true
+		line, ioErr = inSrc.ReadString('\n')
+		if ioErr != nil && !errors.Is(ioErr, io.EOF) {
+			log.Printf("input parser: read line error: %v", ioErr)
+			return command{}, nil, ioErr
 		}
 
 		// trim empty chars
 		line = strings.TrimSpace(line)
 		// empty line skip
 		if len(line) == 0 {
-			if !isEOF {
+			if ioErr == nil {
 				continue
 			}
-			break
+			// if EOF return
+			return command{}, nil, ioErr
 		}
 
 		// parse single command
-		cmd, err := commandParse(line)
-		if err != nil {
-			log.Printf("input parser: parse next command error: %v", err)
-			return nil, err
+		cmd, cmdErr := commandParse(line)
+		if cmdErr != nil {
+			log.Printf("input parser: parse next command error: %v", cmdErr)
+			return command{}, cmdErr, ioErr
 		}
-
-		out = append(out, cmd)
-		if isEOF {
-			break
-		}
+		return cmd, nil, ioErr
 	}
-	return out, nil
 }
 
 // parse command
