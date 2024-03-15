@@ -9,6 +9,7 @@ func main() {
 }
 
 // O(2^N) (2^1+2^2+2^3+...+2^N => 2^(N+1))
+// NOT O(N*2^N)
 func printAllFib(n int) {
 	for i := 0; i < n; i++ {
 		fmt.Printf("%v fib: %v\n", i, fib(i))
