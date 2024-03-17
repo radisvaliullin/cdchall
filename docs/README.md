@@ -5,8 +5,9 @@ Some code exercise, tasks, etc
 ## content
 ccode6ed - some book
 * prt - part
-* chp - chapter
+* ch - chapter
 * pg - page
 * ex - exercise
+* q - question
 
 intrv - interview

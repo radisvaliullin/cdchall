@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/radisvaliullin/cdchall/ccode6ed/prtix/impl/htb/v1/htb"
+	"github.com/radisvaliullin/cdchall/ccode6ed/prtix/ch1/pg/pg90/htb/v1/htb"
 )
 
 // Implement simple hash table.
