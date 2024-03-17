@@ -8,6 +8,6 @@ ccode6ed - some book
 * ch - chapter
 * pg - page
 * ex - exercise
-* q - question
+* qst, q - question
 
 intrv - interview
