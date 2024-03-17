@@ -155,6 +155,16 @@ newbuckets:
 	t.buckets = newBuckets
 }
 
+func (t *HTB) Len() int {
+	ln := 0
+	for bidx := range t.buckets {
+		for range t.buckets[bidx].slots {
+			ln++
+		}
+	}
+	return ln
+}
+
 // just for debug
 func (t *HTB) String() string {
 	m := map[string]string{}
