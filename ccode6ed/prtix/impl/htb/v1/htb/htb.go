@@ -111,7 +111,7 @@ func (t *HTB) Del(k string) {
 			t.buckets[bidx].slots = append(t.buckets[bidx].slots[:i], t.buckets[bidx].slots[i+1:]...)
 			// clean deleted slot pointers
 			newLen := len(t.buckets[bidx].slots)
-			delSlots := t.buckets[bidx].slots[newLen : oldLen+7]
+			delSlots := t.buckets[bidx].slots[newLen:oldLen]
 			for i := range delSlots {
 				delSlots[i].key, delSlots[i].val = nil, nil
 			}
