@@ -65,10 +65,8 @@ type slot struct {
 }
 
 func (t *HTB) Add(k, v string) {
-	// key hash (use Go default map hash function)
-	h := maphash.String(t.seed, k)
-	// bucket index
-	bidx := h % uint64(len(t.buckets))
+	// bucket idx
+	bidx := getBIdx(t.buckets, k, t.seed)
 	bucket := t.buckets[bidx]
 
 	// set key val
@@ -84,16 +82,16 @@ func (t *HTB) Add(k, v string) {
 	// check if need reallocate
 	if len(bucket.slots) == MaxSlotSize {
 		t.reallocate()
-		// find new bucket index and bslots
-		bidx = h % uint64(len(t.buckets))
+		// find new bucket index
+		bidx = getBIdx(t.buckets, k, t.seed)
 	}
+	// we never reallocate slice array of slots because track size of slice (see if len check above)
 	t.buckets[bidx].slots = append(t.buckets[bidx].slots, slot{key: &k, val: &v})
 }
 
 // return value and find status
 func (t *HTB) Get(k string) (string, bool) {
-	h := maphash.String(t.seed, k)
-	bidx := h % uint64(len(t.buckets))
+	bidx := getBIdx(t.buckets, k, t.seed)
 	for i := 0; i < len(t.buckets[bidx].slots); i++ {
 		slot := t.buckets[bidx].slots[i]
 		if *slot.key == k {
@@ -104,20 +102,57 @@ func (t *HTB) Get(k string) (string, bool) {
 }
 
 func (t *HTB) Del(k string) {
-	h := maphash.String(t.seed, k)
-	bidx := h % uint64(len(t.buckets))
+	bidx := getBIdx(t.buckets, k, t.seed)
 	for i := 0; i < len(t.buckets[bidx].slots); i++ {
 		slot := t.buckets[bidx].slots[i]
 		if *slot.key == k {
+			// we can use generic slices.Delete method, but for learn purpose I used old manual approach
+			oldLen := len(t.buckets[bidx].slots)
 			t.buckets[bidx].slots = append(t.buckets[bidx].slots[:i], t.buckets[bidx].slots[i+1:]...)
+			// clean deleted slot pointers
+			newLen := len(t.buckets[bidx].slots)
+			delSlots := t.buckets[bidx].slots[newLen : oldLen+7]
+			for i := range delSlots {
+				delSlots[i].key, delSlots[i].val = nil, nil
+			}
 			return
 		}
 	}
 }
 
-// TODO need finish
+// allocates new buckets and copy slots to new buckets
+// simple implementation without optimizations
 func (t *HTB) reallocate() {
+	bSize := len(t.buckets)
 
+	// use loop
+	// if we again get slot overflow we need again double size of buckets
+	var newBuckets []bucket
+newbuckets:
+	for {
+		bSize = bSize * 2
+		newBuckets = make([]bucket, bSize)
+		// allocate slots
+		for i := range newBuckets {
+			newBuckets[i].slots = make([]slot, 0, MaxSlotSize)
+		}
+		// copy slots to new buckets
+		for bidx := 0; bidx < len(t.buckets); bidx++ {
+			for sidx := 0; sidx < len(t.buckets[bidx].slots); sidx++ {
+				kp, vp := t.buckets[bidx].slots[sidx].key, t.buckets[bidx].slots[sidx].val
+				// new
+				nbidx := getBIdx(newBuckets, *kp, t.seed)
+				newBuckets[nbidx].slots = append(newBuckets[nbidx].slots, slot{key: kp, val: vp})
+				// check slots overflow
+				if len(newBuckets[nbidx].slots) == MaxSlotSize {
+					continue newbuckets
+				}
+			}
+		}
+		// if all slots copied break
+		break newbuckets
+	}
+	t.buckets = newBuckets
 }
 
 // just for debug
@@ -130,4 +165,11 @@ func (t *HTB) String() string {
 	}
 	jb, _ := json.Marshal(&m)
 	return string(jb)
+}
+
+// get buckets idx
+func getBIdx(buckets []bucket, k string, seed maphash.Seed) uint64 {
+	// key hash (use Go default map hash function)
+	h := maphash.String(seed, k)
+	return h % uint64(len(buckets))
 }
