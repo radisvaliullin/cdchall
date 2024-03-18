@@ -67,6 +67,7 @@ func isPermutOfPalinV2(s string) bool {
 }
 
 // O(N)
+// mem - O(1)
 func isPermutOfPalinV3onlyLatinLetter(s string) bool {
 	// use bit vector for check odd or even number of char repeat in string
 	bitVector := uint64(0)
